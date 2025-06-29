@@ -7,9 +7,11 @@ import (
 )
 
 type Config struct {
-	Db_url            string `json:"db_url"`
-	Current_user_name string `json:"current_user_name"`
+	DbUrl           string `json:"db_url"`
+	CurrentUserName string `json:"current_user_name"`
 }
+
+const configFileName = ".gatorconfig.json"
 
 func Read() (Config, error) {
 	var cfg Config
@@ -31,13 +33,9 @@ func Read() (Config, error) {
 	return cfg, nil
 }
 
-func (c *Config) SetUser(name string) error {
-	c.Current_user_name = name
-	err := write(*c)
-	if err != nil {
-		return err
-	}
-	return nil
+func (cfg *Config) SetUser(name string) error {
+	cfg.CurrentUserName = name
+	return write(*cfg)
 }
 
 func getConfigFilePath() (string, error) {
@@ -61,11 +59,5 @@ func write(cfg Config) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(path, data, 0644)
-	if err != nil {
-		return err
-	}
-	return nil
+	return os.WriteFile(path, data, 0666) // 0666 = Read/Write perms for all, 0644 = Read/Write for owner, read for others
 }
-
-const configFileName = ".gatorconfig.json"
