@@ -1,10 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/FlamestarRS/blogaggregator/internal/config"
+	"github.com/FlamestarRS/blogaggregator/internal/database"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -15,12 +19,22 @@ func main() {
 	s := state{
 		cfg: &cfg,
 	}
+
+	db, err := sql.Open("postgres", cfg.DbUrl)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	dbQueries := database.New(db)
+	s.db = dbQueries
+
 	commandsMap := make(map[string]func(*state, command) error)
 	commands := commands{
 		cmds: commandsMap,
 	}
 
 	commands.register("login", handlerLogin)
+	commands.register("register", handlerRegister)
 
 	input := os.Args
 	if len(input) < 2 {
@@ -42,10 +56,4 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-
-	cfg, err = config.Read()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(cfg)
 }
