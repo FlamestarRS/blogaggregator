@@ -93,3 +93,28 @@ func handlerAgg(s *state, cmd command) error {
 	fmt.Println(feed)
 	return nil
 }
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.args) != 2 {
+		return fmt.Errorf("error: no user or no feed")
+	}
+	name := cmd.args[0]
+	url := cmd.args[1]
+	id, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return err
+	}
+	params := database.CreateFeedParams{
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      name,
+		Url:       url,
+		UserID:    id.ID,
+	}
+	newFeed, err := s.db.CreateFeed(context.Background(), params)
+	if err != nil {
+		return err
+	}
+	fmt.Println(newFeed)
+	return nil
+}
