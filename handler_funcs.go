@@ -94,28 +94,25 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 2 {
 		return fmt.Errorf("error: no user or no feed")
 	}
 	name := cmd.args[0]
 	url := cmd.args[1]
-	id, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
+
 	params := database.CreateFeedParams{
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Name:      name,
 		Url:       url,
-		UserID:    id.ID,
+		UserID:    user.ID,
 	}
 	newFeed, err := s.db.CreateFeed(context.Background(), params)
 	if err != nil {
 		return err
 	}
-	handlerFollow(s, command{args: []string{url}})
+	handlerFollow(s, command{args: []string{url}}, user)
 	fmt.Println(newFeed)
 	return nil
 }
@@ -139,7 +136,7 @@ func handlerListFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("error: no feed url provided")
 	}
@@ -148,14 +145,11 @@ func handlerFollow(s *state, cmd command) error {
 	if err != nil {
 		return err
 	}
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
+
 	params := database.CreateFeedFollowParams{
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 		FeedID:    feed.ID,
 	}
 	follow, err := s.db.CreateFeedFollow(context.Background(), params)
@@ -166,11 +160,8 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
+func handlerFollowing(s *state, cmd command, user database.User) error {
+
 	following, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
 	if err != nil {
 		return err
