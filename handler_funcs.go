@@ -12,7 +12,7 @@ import (
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.args) != 1 {
 
-		return fmt.Errorf("error: no username")
+		return fmt.Errorf("usage: %s <username>", cmd.name)
 	}
 	username := cmd.args[0]
 	_, err := s.db.GetUser(context.Background(), username)
@@ -31,7 +31,7 @@ func handlerLogin(s *state, cmd command) error {
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.args) != 1 {
 
-		return fmt.Errorf("error: no username")
+		return fmt.Errorf("usage: %s <username>", cmd.name)
 	}
 	username := cmd.args[0]
 	_, err := s.db.GetUser(context.Background(), username)
@@ -96,7 +96,7 @@ func handlerAgg(s *state, cmd command) error {
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 2 {
-		return fmt.Errorf("error: no user or no feed")
+		return fmt.Errorf("usage: %s <feed_name> <feed_url>", cmd.name)
 	}
 	name := cmd.args[0]
 	url := cmd.args[1]
@@ -138,7 +138,7 @@ func handlerListFeeds(s *state, cmd command) error {
 
 func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("error: no feed url provided")
+		return fmt.Errorf("usage: %s <feed_url>", cmd.name)
 	}
 	url := cmd.args[0]
 	feed, err := s.db.GetFeedByURL(context.Background(), url)
