@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/xml"
 	"fmt"
 	"html"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/FlamestarRS/blogaggregator/internal/database"
@@ -85,8 +87,40 @@ func scrapeFeeds(s *state) error {
 		return fmt.Errorf("error fetching feed: %v", err)
 	}
 	fmt.Printf("Feed: %s\nFetched %v posts:\n", fetchedFeed.Channel.Title, len(fetchedFeed.Channel.Item))
+	newPostCounter := 0
+	newPosts := []string{}
 	for _, item := range fetchedFeed.Channel.Item {
-		fmt.Println(item.Title)
+		const timeFormat = "Mon, 02 Jan 2006 15:04:05 -0700"
+		pubDate, _ := time.Parse(timeFormat, item.PubDate)
+
+		hasDesc := true
+		if strings.HasPrefix(item.Description, "<") {
+			hasDesc = false
+		}
+
+		paramsCreatePost := database.CreatePostParams{
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Title:     item.Title,
+			Url:       item.Link,
+			Description: sql.NullString{
+				String: item.Description,
+				Valid:  hasDesc,
+			},
+			PublishedAt: pubDate,
+			FeedID:      nextFeed.ID,
+		}
+		_, err = s.db.CreatePost(context.Background(), paramsCreatePost)
+		if err != nil {
+			continue
+		}
+		newPostCounter += 1
+		newPosts = append(newPosts, item.Title)
+
+	}
+	fmt.Printf("Found %v new posts:\n\n", newPostCounter)
+	for _, postTitle := range newPosts {
+		fmt.Println(postTitle)
 	}
 
 	return nil

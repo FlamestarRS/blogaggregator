@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/FlamestarRS/blogaggregator/internal/database"
@@ -203,6 +204,36 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	err = s.db.DeleteFeedFollow(context.Background(), params)
 	if err != nil {
 		return fmt.Errorf("error unfollowing feed")
+	}
+	return nil
+}
+
+func handlerBrowse(s *state, cmd command) error {
+	if len(cmd.args) > 1 {
+		return fmt.Errorf("usage: %s <int> (optional)", cmd.name)
+	}
+	limit := 2
+	if len(cmd.args) == 1 {
+		var err error
+		limit, err = strconv.Atoi(cmd.args[0])
+		if err != nil {
+			return fmt.Errorf("error setting limit: %v", err)
+		}
+	}
+	postList, err := s.db.GetPostsForUser(context.Background(), int32(limit))
+	if err != nil {
+		return fmt.Errorf("error getting posts: %v", err)
+	}
+	for _, post := range postList {
+		feed, err := s.db.GetFeedByID(context.Background(), post.FeedID)
+		if err != nil {
+			return fmt.Errorf("error getting feed from feedID")
+		}
+		if post.Description.Valid {
+			fmt.Printf("Feed: %s\nTitle: %s\nDescription: %s\nLink: %s\nPubDate: %.10v\n", feed.Name, post.Title, post.Description.String, post.Url, post.PublishedAt)
+			continue
+		}
+		fmt.Printf("Feed: %s\nTitle: %s\nLink: %s\nPubDate: %.10v\n", feed.Name, post.Title, post.Url, post.PublishedAt)
 	}
 	return nil
 }
