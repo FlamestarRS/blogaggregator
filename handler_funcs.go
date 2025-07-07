@@ -85,13 +85,23 @@ func handlerListUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	url := "https://www.wagslane.dev/index.xml"
-	feed, err := fetchFeed(context.Background(), url)
-	if err != nil {
-		return err
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("usage: %s <time_between_requests> ex: 10s, 1m, 1h", cmd.name)
 	}
-	fmt.Println(feed)
-	return nil
+	timeBetweenReqs := cmd.args[0]
+	fmt.Println("Collecting feeds every " + timeBetweenReqs)
+	parsedTime, err := time.ParseDuration(timeBetweenReqs)
+	if err != nil {
+		return fmt.Errorf("error parsing time: %v", err)
+	}
+	ticker := time.NewTicker(parsedTime)
+	counter := 0
+	for ; ; <-ticker.C {
+		counter += 1
+		fmt.Printf("scraping feed... (%v)\n", counter)
+		scrapeFeeds(s)
+	}
+
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
@@ -156,7 +166,7 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 	if err != nil {
 		return fmt.Errorf("error: could not follow feed %v, err: %v", feed.Name, err)
 	}
-	fmt.Println("Feed: " + follow.FeedName + "User: " + follow.UserName)
+	fmt.Println("Feed: " + follow.FeedName + " User: " + follow.UserName)
 	return nil
 }
 

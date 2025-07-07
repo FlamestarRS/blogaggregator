@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"encoding/xml"
+	"fmt"
 	"html"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/FlamestarRS/blogaggregator/internal/database"
 )
 
 type RSSFeed struct {
@@ -62,4 +65,29 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 		rssFeed.Channel.Item[i] = item
 	}
 	return &rssFeed, nil
+}
+
+func scrapeFeeds(s *state) error {
+	nextFeed, err := s.db.GetNextFeedToFetch(context.Background())
+	if err != nil {
+		return fmt.Errorf("error getting feed: %v", err)
+	}
+	params := database.MarkFeedFetchedParams{
+		ID:        nextFeed.ID,
+		UpdatedAt: time.Now(),
+	}
+	err = s.db.MarkFeedFetched(context.Background(), params)
+	if err != nil {
+		return fmt.Errorf("error marking feed: %v", err)
+	}
+	fetchedFeed, err := fetchFeed(context.Background(), nextFeed.Url)
+	if err != nil {
+		return fmt.Errorf("error fetching feed: %v", err)
+	}
+	fmt.Printf("Feed: %s\nFetched %v posts:\n", fetchedFeed.Channel.Title, len(fetchedFeed.Channel.Item))
+	for _, item := range fetchedFeed.Channel.Item {
+		fmt.Println(item.Title)
+	}
+
+	return nil
 }
