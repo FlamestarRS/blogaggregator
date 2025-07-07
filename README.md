@@ -29,7 +29,7 @@ Create a config file in your home directory:
     - touch .gatorconfig.json
 
 In .gatorconfig.json:
-    {"db_url": "postgres://example"}
+    {"db_url": "postgres://username:@localhost:5432/database?sslmode=disable"}
 
 From the project directory:
     - go build .
@@ -39,12 +39,12 @@ From the project directory:
 
 Commands are run from the command line while in the project directory.
 All commands must be prefixed with:
-    - go run .
+    - blogaggregator
 
 Examples:
-    - go run . register Flamestar
-    - go run . addfeed "feednamehere" "rsslink.here"
-    - go run . feeds
+    - blogaggregator register Flamestar
+    - blogaggregator addfeed "feednamehere" "rsslink.here"
+    - blogaggregator feeds
 
 Commands:
     register:
